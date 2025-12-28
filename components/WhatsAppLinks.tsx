@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface WhatsAppLinksProps {
   newNumbers: string[];
@@ -8,10 +8,42 @@ interface WhatsAppLinksProps {
 
 export function WhatsAppLinks({ newNumbers }: WhatsAppLinksProps) {
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [clickedNumbers, setClickedNumbers] = useState<Set<string>>(new Set());
 
   const uniqueNumbers = useMemo(() => Array.from(new Set(newNumbers)), [newNumbers]);
 
-  const openAllChats = useCallback(() => {
+  // Fetch clicked numbers on mount
+  useEffect(() => {
+    async function fetchClicked() {
+      try {
+        const res = await fetch("/api/clicked");
+        if (res.ok) {
+          const data = await res.json();
+          setClickedNumbers(new Set(data.clickedNumbers || []));
+        }
+      } catch (error) {
+        console.error("Failed to fetch clicked numbers", error);
+      }
+    }
+    fetchClicked();
+  }, []);
+
+  const markAsClicked = useCallback(async (number: string) => {
+    // Optimistically update local state
+    setClickedNumbers((prev) => new Set([...prev, number]));
+
+    try {
+      await fetch("/api/clicked", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ number }),
+      });
+    } catch (error) {
+      console.error("Failed to persist clicked number", error);
+    }
+  }, []);
+
+  const openAllChats = useCallback(async () => {
     if (uniqueNumbers.length === 0) {
       return;
     }
@@ -25,12 +57,26 @@ export function WhatsAppLinks({ newNumbers }: WhatsAppLinksProps) {
       }
     }
 
+    // Mark all as clicked
+    const newClicked = new Set([...clickedNumbers, ...uniqueNumbers]);
+    setClickedNumbers(newClicked);
+
+    try {
+      await fetch("/api/clicked", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ numbers: uniqueNumbers }),
+      });
+    } catch (error) {
+      console.error("Failed to persist clicked numbers", error);
+    }
+
     uniqueNumbers.forEach((number, index) => {
       setTimeout(() => {
         window.open(`https://wa.me/${number}`, "_blank", "noopener");
       }, index * 500);
     });
-  }, [uniqueNumbers]);
+  }, [uniqueNumbers, clickedNumbers]);
 
   const copyToClipboard = useCallback(async () => {
     if (uniqueNumbers.length === 0) {
@@ -47,6 +93,13 @@ export function WhatsAppLinks({ newNumbers }: WhatsAppLinksProps) {
       setTimeout(() => setCopyStatus(null), 2000);
     }
   }, [uniqueNumbers]);
+
+  const handleLinkClick = useCallback(
+    (number: string) => {
+      markAsClicked(number);
+    },
+    [markAsClicked],
+  );
 
   if (uniqueNumbers.length === 0) {
     return null;
@@ -80,19 +133,33 @@ export function WhatsAppLinks({ newNumbers }: WhatsAppLinksProps) {
       </div>
 
       <ul className="grid gap-2 sm:grid-cols-2">
-        {uniqueNumbers.map((number) => (
-          <li key={number}>
-            <a
-              href={`https://wa.me/${number}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between rounded-md border border-emerald-200 bg-white px-4 py-2 text-sm font-medium text-emerald-800 transition hover:border-emerald-400 hover:bg-emerald-100"
-            >
-              <span className="font-mono">{number}</span>
-              <span className="text-xs uppercase tracking-wide text-emerald-600">Open</span>
-            </a>
-          </li>
-        ))}
+        {uniqueNumbers.map((number) => {
+          const isClicked = clickedNumbers.has(number);
+          return (
+            <li key={number}>
+              <a
+                href={`https://wa.me/${number}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => handleLinkClick(number)}
+                className={`flex items-center justify-between rounded-md border px-4 py-2 text-sm font-medium transition ${
+                  isClicked
+                    ? "border-gray-200 bg-gray-100 text-gray-400 hover:border-gray-300 hover:bg-gray-150"
+                    : "border-emerald-200 bg-white text-emerald-800 hover:border-emerald-400 hover:bg-emerald-100"
+                }`}
+              >
+                <span className="font-mono">{number}</span>
+                <span
+                  className={`text-xs uppercase tracking-wide ${
+                    isClicked ? "text-gray-400" : "text-emerald-600"
+                  }`}
+                >
+                  {isClicked ? "Opened" : "Open"}
+                </span>
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );
