@@ -187,7 +187,7 @@ export default function Home() {
             skipped={skipped}
             totalProcessed={logInfo.totalProcessed}
           />
-          <WhatsAppLinks newNumbers={newNumbers} />
+          <WhatsAppLinks newNumbers={numbers} />
           <SuspiciousNumbers numbers={suspiciousNumbers} />
         </div>
       )}

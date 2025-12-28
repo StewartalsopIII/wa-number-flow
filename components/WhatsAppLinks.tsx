@@ -55,9 +55,9 @@ export function WhatsAppLinks({ newNumbers }: WhatsAppLinksProps) {
   return (
     <section className="w-full rounded-xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
       <header className="mb-4 flex flex-col gap-1">
-        <h2 className="text-lg font-semibold text-emerald-900">New Numbers - WhatsApp Links</h2>
+        <h2 className="text-lg font-semibold text-emerald-900">All Numbers - WhatsApp Links</h2>
         <p className="text-sm text-emerald-700">
-          Ready to message {uniqueNumbers.length} new contact{uniqueNumbers.length === 1 ? "" : "s"}.
+          Ready to message {uniqueNumbers.length} contact{uniqueNumbers.length === 1 ? "" : "s"}.
         </p>
       </header>
 
@@ -67,7 +67,7 @@ export function WhatsAppLinks({ newNumbers }: WhatsAppLinksProps) {
           onClick={openAllChats}
           className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
         >
-          Open All New Chats
+          Open All Chats
         </button>
         <button
           type="button"

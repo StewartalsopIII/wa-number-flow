@@ -10,7 +10,7 @@ WhatsApp Number Flow is a Next.js 14 (App Router) web app that extracts every Wh
 ## Installation
 1. Clone or copy this repository and open the project directory:
    ```bash
-   cd magic-whatsapp-group/wa-number-flow-llm
+   cd wa-number-flow-llm
    ```
 2. Install dependencies:
    ```bash
